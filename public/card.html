@@ -26,7 +26,7 @@
 
   /* لوحة أخطاء صغيرة (زر ⚠) تساعد في معرفة سبب عدم جلب بيانات الكرت */
   var errs=[];
-  function add(t){try{errs.push(String(t).slice(0,600));paint()}catch(e){}}
+  function add(t){try{t=String(t).slice(0,900);if(errs.indexOf(t)<0)errs.push(t);paint()}catch(e){}}
   function paint(){
     var root=document.documentElement,b=document.getElementById("__alfErr");
     if(!root||!document.body)return;
@@ -41,7 +41,17 @@
     b.lastChild.textContent=errs.join("\n\n");
   }
   function hook(){
-    window.addEventListener("error",function(e){add("Error: "+(e.message||(e.target&&e.target.src&&"فشل تحميل: "+e.target.src)||e))},true);
+    window.addEventListener("error",function(e){
+      var m=e.message||(e.target&&e.target.src&&"فشل تحميل: "+e.target.src)||String(e);
+      var ctx="";
+      if(e.lineno&&code){
+        var L=code.split("\n"),n=e.lineno;
+        ctx="\n  [سطر "+n+" عمود "+(e.colno||"?")+"] "+(L[n-1]||"").trim().slice(0,200)
+           +"\n  [السطر السابق] "+(L[n-2]||"").trim().slice(0,200)
+           +"\n  [السطر التالي] "+(L[n]||"").trim().slice(0,200);
+      }
+      add("Error: "+m+ctx);
+    },true);
     window.addEventListener("unhandledrejection",function(e){var r=e.reason;add("Promise: "+(r&&(r.code?r.code+" - ":"")+(r.message||r)))});
   }
   ["error","warn"].forEach(function(k){

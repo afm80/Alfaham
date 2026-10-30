@@ -22,12 +22,23 @@
   function cached(){
     try{var d=JSON.parse(localStorage.getItem("alfahamCardsV1")||"null");return d&&d[id]&&d[id].code?d[id].code:null}catch(e){return null}
   }
-  function finish(code){
-    if(done)return;done=true;
+  /* الطريقة الأساسية: نخزّن الكود في Cache ويقدّمه sw.js كصفحة حقيقية run/<id>.html */
+  function fallback(code){
     var ok=false;
     try{sessionStorage.setItem("alfahamCode:"+id,code);ok=true}catch(e){}
     if(!ok){try{window.name="alfahamCode:"+id+"\n"+code;ok=true}catch(e){}}
     location.replace("card.html?id="+encodeURIComponent(id)+(ok?"":"&r=1"));
+  }
+  function finish(code){
+    if(done)return;done=true;
+    if(!("serviceWorker" in navigator)||!window.caches){fallback(code);return}
+    var url=new URL("run/"+encodeURIComponent(id)+".html",location.href).href;
+    navigator.serviceWorker.register("sw.js")
+      .then(function(){return navigator.serviceWorker.ready})
+      .then(function(){return caches.open("alfaham-run-v1")})
+      .then(function(c){return c.put(url,new Response(code,{headers:{"Content-Type":"text/html;charset=utf-8"}}))})
+      .then(function(){location.replace(url)})
+      .catch(function(){fallback(code)});
   }
   firebase.initializeApp({
     apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",
