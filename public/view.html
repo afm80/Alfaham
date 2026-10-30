@@ -27,7 +27,7 @@
     var ok=false;
     try{sessionStorage.setItem("alfahamCode:"+id,code);ok=true}catch(e){}
     if(!ok){try{window.name="alfahamCode:"+id+"\n"+code;ok=true}catch(e){}}
-    location.replace("card.html?id="+encodeURIComponent(id));
+    location.replace("card.html?id="+encodeURIComponent(id)+(ok?"":"&r=1"));
   }
   firebase.initializeApp({
     apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",

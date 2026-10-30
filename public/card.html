@@ -4,22 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alfaham</title>
-<style>html,body{height:100%;margin:0;background:#1b1f2a;color:#a1a1aa;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
+<style>html,body{height:100%;margin:0;background:#1b1f2a;color:#aab2c5;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
 </head>
 <body>
-<p>جارٍ التحميل...</p>
+<p id="m">جارٍ التحميل...</p>
 <script>
 /* صفحة نظيفة (بدون أي مكتبة Firebase) تشغّل كود الكرت على نفس نطاق الموقع.
-   الكود يُقرأ مرة واحدة فقط؛ وعند التحديث يعود إلى view.html لجلب أحدث نسخة. */
+   الكتابة تتم بعد انتهاء تحميل هذه الصفحة وإلا يتجاهل المتصفح document.open(). */
 (function(){
-  var id=new URLSearchParams(location.search).get("id");
+  var params=new URLSearchParams(location.search);
+  var id=params.get("id")||"";
   var key="alfahamCode:"+id,code=null;
-  try{code=sessionStorage.getItem(key);if(code!==null)sessionStorage.removeItem(key)}catch(e){}
+  try{code=sessionStorage.getItem(key)}catch(e){}
   if(!code){
-    try{if(window.name.indexOf(key+"\n")===0){code=window.name.slice(key.length+1);window.name=""}}catch(e){}
+    try{if(window.name.indexOf(key+"\n")===0){code=window.name.slice(key.length+1)}}catch(e){}
   }
-  if(!code){location.replace("view.html?id="+encodeURIComponent(id||""));return}
-  document.open();document.write(code);document.close();
+  if(!code){
+    if(params.get("r")){document.getElementById("m").textContent="تعذّر تشغيل الكرت: لم يصل الكود (المتصفح يمنع التخزين المؤقت؟)";return}
+    location.replace("view.html?id="+encodeURIComponent(id));return;
+  }
+
+  /* لوحة أخطاء صغيرة (زر ⚠) تساعد في معرفة سبب عدم جلب بيانات الكرت */
+  var errs=[];
+  function add(t){try{errs.push(String(t).slice(0,600));paint()}catch(e){}}
+  function paint(){
+    var root=document.documentElement,b=document.getElementById("__alfErr");
+    if(!root||!document.body)return;
+    if(!b){
+      b=document.createElement("div");b.id="__alfErr";
+      b.style.cssText="position:fixed;left:8px;bottom:8px;z-index:2147483647;font:12px sans-serif;direction:ltr";
+      b.innerHTML='<button style="background:#b45309;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer">⚠ <span></span></button><pre style="display:none;max-width:90vw;max-height:50vh;overflow:auto;margin:6px 0 0;padding:8px;background:#111827;color:#fca5a5;border-radius:8px;white-space:pre-wrap;word-break:break-word"></pre>';
+      b.firstChild.onclick=function(){var p=b.lastChild;p.style.display=p.style.display==="none"?"block":"none"};
+      root.appendChild(b);
+    }
+    b.firstChild.lastChild.textContent=errs.length;
+    b.lastChild.textContent=errs.join("\n\n");
+  }
+  function hook(){
+    window.addEventListener("error",function(e){add("Error: "+(e.message||(e.target&&e.target.src&&"فشل تحميل: "+e.target.src)||e))},true);
+    window.addEventListener("unhandledrejection",function(e){var r=e.reason;add("Promise: "+(r&&(r.code?r.code+" - ":"")+(r.message||r)))});
+  }
+  ["error","warn"].forEach(function(k){
+    var o=console[k];console[k]=function(){try{add(k+": "+Array.prototype.slice.call(arguments).join(" "))}catch(e){}return o.apply(console,arguments)};
+  });
+
+  function run(){setTimeout(function(){
+    document.open();hook();document.write(code);document.close();hook();
+    if(errs.length)setTimeout(paint,50);
+  },0)}
+  if(document.readyState==="complete")run();else window.addEventListener("load",run);
 })();
 </script>
 </body>
