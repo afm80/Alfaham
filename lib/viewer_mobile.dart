@@ -1,4 +1,6 @@
 import 'dart:collection';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,7 +30,18 @@ class _ViewerScreenState extends State<ViewerScreen> {
 
   static const _hook = r'''
 window.addEventListener('error', function(e){
-  try{ window.flutter_inappwebview.callHandler('pageError', String(e.message), e.lineno||0, e.colno||0, String(e.filename||'')); }catch(_){}
+  try{
+    var t = e.target;
+    if (t && t !== window && t.tagName) {
+      // خطأ تحميل مورد (صورة/سكربت/ستايل) وليس خطأ جافاسكربت
+      var u = String(t.currentSrc || t.src || t.href || '');
+      if (u.indexOf('data:') === 0) u = 'data:...';
+      window.flutter_inappwebview.callHandler('pageError', '[تعذر تحميل ' + String(t.tagName).toLowerCase() + '] ' + u.slice(0, 200), 0, 0, '');
+      return;
+    }
+    var m = e.message || (e.error && e.error.message) || 'خطأ غير معروف';
+    window.flutter_inappwebview.callHandler('pageError', String(m), e.lineno||0, e.colno||0, String(e.filename||''));
+  }catch(_){}
 }, true);
 window.addEventListener('unhandledrejection', function(e){
   try{ var r=e.reason; window.flutter_inappwebview.callHandler('pageError', 'Promise: '+String(r&&r.message?r.message:r), 0, 0, ''); }catch(_){}
@@ -62,7 +75,13 @@ window.addEventListener('unhandledrejection', function(e){
 
   Future<void> _load() async {
     setState(() => _errs.clear());
-    await _c?.loadData(data: widget.card.code, baseUrl: WebUri.uri(_base), mimeType: 'text/html', encoding: 'utf-8');
+    await _c?.loadData(
+      data: widget.card.code,
+      baseUrl: WebUri.uri(_base),
+      historyUrl: WebUri.uri(_base),
+      mimeType: 'text/html',
+      encoding: 'utf-8',
+    );
   }
 
   void _toggleFull() {
@@ -155,11 +174,13 @@ window.addEventListener('unhandledrejection', function(e){
                   initialData: InAppWebViewInitialData(
                     data: widget.card.code,
                     baseUrl: WebUri.uri(_base),
+                    historyUrl: WebUri.uri(_base),
                     mimeType: 'text/html',
                     encoding: 'utf-8',
                   ),
                   initialSettings: InAppWebViewSettings(
                     javaScriptEnabled: true,
+                    useShouldInterceptRequest: true,
                     domStorageEnabled: true,
                     databaseEnabled: true,
                     useShouldOverrideUrlLoading: true,
@@ -182,7 +203,33 @@ window.addEventListener('unhandledrejection', function(e){
                   initialUserScripts: UnmodifiableListView<UserScript>([
                     UserScript(source: _hook, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
                   ]),
-                  onProgressChanged: (_, p) => setState(() => _progress = p / 100),
+                  // الصفحة تعيش على رابطها الوهمي (/run/<id>.html). السيرفر الحقيقي يرد بـ index.html
+                  // لأي مسار (rewrite)، فنُرجع كود الكرت بأنفسنا عند إعادة التحميل / الرجوع / reload
+                  // حتى لا تتحول الصفحة إلى شاشة بيضاء أو تُحمّل التطبيق نفسه.
+                  shouldInterceptRequest: (_, req) async {
+                    final u = Uri.tryParse(req.url.toString());
+                    if (u != null && u.host == _base.host && u.path == _base.path) {
+                      return WebResourceResponse(
+                        contentType: 'text/html',
+                        contentEncoding: 'utf-8',
+                        data: Uint8List.fromList(utf8.encode(widget.card.code)),
+                      );
+                    }
+                    return null;
+                  },
+                  onReceivedError: (_, req, err) {
+                    if (req.isForMainFrame == true && mounted) {
+                      final s = 'تعذر تحميل الصفحة: ${err.description}';
+                      if (!_errs.contains(s)) setState(() => _errs.add(s));
+                    }
+                  },
+                  onRenderProcessGone: (_, __) {
+                    // انهيار عملية العرض (يسبب شاشة بيضاء) — نعيد التحميل تلقائياً
+                    if (mounted) _load();
+                  },
+                  onProgressChanged: (_, p) {
+                    if (mounted) setState(() => _progress = p / 100);
+                  },
                   onConsoleMessage: (_, m) {
                     if (m.messageLevel == ConsoleMessageLevel.ERROR && !_errs.contains(m.message)) {
                       setState(() => _errs.add(m.message));

@@ -19,10 +19,36 @@ class ViewerScreen extends StatefulWidget {
 class _ViewerScreenState extends State<ViewerScreen> {
   int _gen = 0;
   bool _full = false;
+  String? _blobUrl;
+
+  void _revoke() {
+    final u = _blobUrl;
+    if (u != null) {
+      try {
+        web.URL.revokeObjectURL(u);
+      } catch (_) {}
+      _blobUrl = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _revoke();
+    super.dispose();
+  }
 
   void _init(Object el) {
     final f = el as web.HTMLIFrameElement;
-    f.srcdoc = widget.card.code.toJS;
+    // نستخدم Blob URL بدل srcdoc: في srcdoc أي رابط نسبي أو href="#" يُحل على عنوان
+    // تطبيق Flutter نفسه، وبسبب rewrite (** -> /index.html) يُحمَّل التطبيق داخل iframe
+    // ثم داخل نفسه بلا نهاية فتتجمد الشاشة. الـ Blob له رابط خاص به ونفس الأصل (Origin).
+    _revoke();
+    final blob = web.Blob(
+      [widget.card.code.toJS].toJS as JSArray<JSAny>,
+      web.BlobPropertyBag(type: 'text/html;charset=utf-8'),
+    );
+    _blobUrl = web.URL.createObjectURL(blob);
+    f.src = _blobUrl!;
     f.allow = 'clipboard-write; fullscreen; camera; microphone';
     f.style.border = 'none';
     f.style.width = '100%';
