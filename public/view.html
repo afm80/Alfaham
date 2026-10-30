@@ -17,10 +17,11 @@
   function show(code){document.open();document.write(code);document.close()}
   function fail(t){document.getElementById("m").textContent=t}
   if(!id){fail("كرت غير معروف");return}
-  try{
-    var d=JSON.parse(localStorage.getItem("alfahamCardsV1")||"null");
-    if(d&&d[id]&&d[id].code){show(d[id].code);return}
-  }catch(e){}
+  var done=false;
+  function cached(){
+    try{var d=JSON.parse(localStorage.getItem("alfahamCardsV1")||"null");return d&&d[id]&&d[id].code?d[id].code:null}catch(e){return null}
+  }
+  function finish(code){if(done)return;done=true;show(code)}
   firebase.initializeApp({
     apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",
     authDomain:"adminafm.firebaseapp.com",
@@ -30,10 +31,17 @@
     messagingSenderId:"336808346535",
     appId:"1:336808346535:web:f9fd7b95aad568f1c42c82"
   });
+  /* الأولوية للنسخة الحديثة من قاعدة البيانات، والنسخة المحفوظة احتياطاً إذا تأخر الاتصال */
+  var timer=setTimeout(function(){var c=cached();if(c)finish(c)},4000);
   firebase.database().ref("cards/"+id).once("value").then(function(s){
+    clearTimeout(timer);
     var c=s.val();
-    if(c&&c.code)show(c.code);else fail("الكرت غير موجود");
-  }).catch(function(e){fail("تعذّر التحميل: "+e.message)});
+    if(c&&c.code)finish(c.code);
+    else{var k=cached();if(k)finish(k);else fail("الكرت غير موجود")}
+  }).catch(function(e){
+    clearTimeout(timer);
+    var k=cached();if(k)finish(k);else fail("تعذّر التحميل: "+e.message)
+  });
 })();
 </script>
 </body>
