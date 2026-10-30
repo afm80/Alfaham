@@ -1,3 +1,5 @@
+import 'dart:js_interop';
+
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 
@@ -20,7 +22,7 @@ class _ViewerScreenState extends State<ViewerScreen> {
 
   void _init(Object el) {
     final f = el as web.HTMLIFrameElement;
-    f.srcdoc = widget.card.code;
+    f.srcdoc = widget.card.code.toJS;
     f.allow = 'clipboard-write; fullscreen; camera; microphone';
     f.style.border = 'none';
     f.style.width = '100%';
