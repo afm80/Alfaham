@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -27,6 +28,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
   double _progress = 0;
   bool _full = false;
   final List<String> _errs = [];
+  final List<String> _reqs = []; // آخر الطلبات (لتشخيص الصفحات العالقة)
+  Timer? _watch;
 
   static const _hook = r'''
 window.addEventListener('error', function(e){
@@ -91,6 +94,7 @@ window.addEventListener('unhandledrejection', function(e){
 
   @override
   void dispose() {
+    _watch?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -208,6 +212,8 @@ window.addEventListener('unhandledrejection', function(e){
                   // حتى لا تتحول الصفحة إلى شاشة بيضاء أو تُحمّل التطبيق نفسه.
                   shouldInterceptRequest: (_, req) async {
                     final u = Uri.tryParse(req.url.toString());
+                    _reqs.add(req.url.toString());
+                    if (_reqs.length > 8) _reqs.removeAt(0);
                     if (u != null && u.host == _base.host && u.path == _base.path) {
                       return WebResourceResponse(
                         contentType: 'text/html',
@@ -217,6 +223,15 @@ window.addEventListener('unhandledrejection', function(e){
                     }
                     return null;
                   },
+                  onLoadStart: (_, __) {
+                    _watch?.cancel();
+                    _watch = Timer(const Duration(seconds: 15), () {
+                      if (!mounted || _progress >= 1) return;
+                      final s = 'الصفحة ما زالت تُحمَّل بعد 15 ثانية (${(_progress * 100).round()}%)\nآخر الطلبات:\n${_reqs.join('\n')}';
+                      if (!_errs.contains(s)) setState(() => _errs.add(s));
+                    });
+                  },
+                  onLoadStop: (_, __) => _watch?.cancel(),
                   onReceivedError: (_, req, err) {
                     if (req.isForMainFrame == true && mounted) {
                       final s = 'تعذر تحميل الصفحة: ${err.description}';

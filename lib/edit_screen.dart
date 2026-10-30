@@ -135,6 +135,21 @@ class _EditScreenState extends State<EditScreen> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
           children: [
+            if (widget.card?.repaired == true)
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0x26FBBF24),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x80FBBF24)),
+                ),
+                child: const Text(
+                  'تم إصلاح خطأ ترميز في كود هذا الكرت تلقائياً (رموز HTML مفكوكة داخل دالة esc). '
+                  'اضغط «حفظ التعديلات» لتثبيت الإصلاح في قاعدة البيانات.',
+                  style: TextStyle(fontSize: 13, height: 1.5),
+                ),
+              ),
             _label('اسم الكرت / القسم'),
             TextField(controller: _title, decoration: const InputDecoration(hintText: 'مثال: متجر الإلكترونيات')),
             _label('صورة القسم'),
