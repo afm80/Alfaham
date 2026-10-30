@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alfaham</title>
+<style>html,body{height:100%;margin:0;background:#000;color:#a1a1aa;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+<p id="m">جارٍ التحميل...</p>
+<script>
+/* يفتح كود الكرت على رابط https حقيقي (نفس نطاق الموقع) بدل blob/srcdoc حتى يعمل تسجيل الدخول طبيعيًا */
+(function(){
+  var id=new URLSearchParams(location.search).get("id");
+  function show(code){document.open();document.write(code);document.close()}
+  function fail(t){document.getElementById("m").textContent=t}
+  if(!id){fail("كرت غير معروف");return}
+  try{
+    var d=JSON.parse(localStorage.getItem("alfahamCardsV1")||"null");
+    if(d&&d[id]&&d[id].code){show(d[id].code);return}
+  }catch(e){}
+  firebase.initializeApp({
+    apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",
+    authDomain:"adminafm.firebaseapp.com",
+    databaseURL:"https://adminafm-default-rtdb.firebaseio.com/",
+    projectId:"adminafm",
+    storageBucket:"adminafm.firebasestorage.app",
+    messagingSenderId:"336808346535",
+    appId:"1:336808346535:web:f9fd7b95aad568f1c42c82"
+  });
+  firebase.database().ref("cards/"+id).once("value").then(function(s){
+    var c=s.val();
+    if(c&&c.code)show(c.code);else fail("الكرت غير موجود");
+  }).catch(function(e){fail("تعذّر التحميل: "+e.message)});
+})();
+</script>
+</body>
+</html>

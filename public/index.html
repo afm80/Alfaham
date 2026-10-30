@@ -69,7 +69,7 @@ body{background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%) 
     <button class="close" id="bClose">إغلاق ✕</button>
   </div>
   <div class="spin" id="spin"></div>
-  <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-downloads"></iframe>
+  <iframe id="frame" src="about:blank" allow="clipboard-write; fullscreen"></iframe>
 </div>
 
 <div class="modal" id="modal">
@@ -140,7 +140,7 @@ function render(){
 }
 $("q").oninput=e=>{term=e.target.value.trim().toLowerCase();render()};
 
-function blobUrl(c){return urlCache[c.id]||(urlCache[c.id]=URL.createObjectURL(new Blob([c.code],{type:"text/html;charset=utf-8"})))}
+function blobUrl(c){return "view.html?id="+encodeURIComponent(c.id)} /* رابط https حقيقي بدل blob */
 
 /* تجهيز مسبق: يبدأ عند لمس الكرت فيفتح فورًا عند الضغط */
 function warm(c){if(getMode()==="tab")blobUrl(c)}
@@ -159,7 +159,7 @@ function openInApp(c){
   $("bTitle").textContent=c.title;
   $("spin").classList.remove("off");fr.classList.remove("ready");
   fr.onload=()=>{$("spin").classList.add("off");fr.classList.add("ready")};
-  fr.srcdoc=c.code;
+  fr.src=blobUrl(c);
   br.style.display="flex";
   requestAnimationFrame(()=>br.classList.add("show"));
   document.body.style.overflow="hidden";
@@ -169,14 +169,14 @@ function closeViewer(fromPop){
   if(!viewerOpen)return;
   viewerOpen=false;
   const br=$("browser");br.classList.remove("show");
-  setTimeout(()=>{br.style.display="none";$("frame").srcdoc="";$("frame").classList.remove("ready")},220);
+  setTimeout(()=>{br.style.display="none";$("frame").src="about:blank";$("frame").classList.remove("ready")},220);
   document.body.style.overflow="";
   if(!fromPop&&history.state&&history.state.v)history.back();
 }
 window.addEventListener("popstate",()=>closeViewer(true));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeViewer()});
 
-$("bReload").onclick=()=>{const c=cards.find(x=>x.id===lastId);if(!c)return;const fr=$("frame");$("spin").classList.remove("off");fr.classList.remove("ready");fr.srcdoc="";setTimeout(()=>fr.srcdoc=c.code,30)};
+$("bReload").onclick=()=>{const c=cards.find(x=>x.id===lastId);if(!c)return;const fr=$("frame");$("spin").classList.remove("off");fr.classList.remove("ready");fr.src="about:blank";setTimeout(()=>fr.src=blobUrl(c),30)};
 $("bTab").onclick=()=>{const c=cards.find(x=>x.id===lastId);if(c)window.open(blobUrl(c),"_blank")};
 $("bFull").onclick=()=>{const b=$("browser");if(document.fullscreenElement)document.exitFullscreen();else if(b.requestFullscreen)b.requestFullscreen().catch(()=>{})};
 $("bClose").onclick=()=>closeViewer();
