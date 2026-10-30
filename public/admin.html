@@ -6,22 +6,22 @@
 <title>لوحة التحكم - Alfaham Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#000;--card:#0f0f11;--card2:#18181b;--accent:#e4e4e7;--text:#fafafa;--muted:#a1a1aa;--border:#27272a;--danger:#dc2626}
+:root{--bg:#1b1f2a;--card:#252b3b;--card2:#2d3447;--accent:#e4e4e7;--text:#fafafa;--muted:#aab2c5;--border:#3b4258;--danger:#dc2626}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif}
-body{background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%) fixed;color:var(--text);padding:20px;min-height:100vh}
+body{background:radial-gradient(ellipse at top,#2c3347 0,#222839 45%,#1b1f2a 100%) fixed;color:var(--text);padding:20px;min-height:100vh}
 .container{max-width:800px;margin:0 auto}
 header{text-align:center;margin-bottom:30px;border-bottom:1px solid var(--border);padding-bottom:15px}
 h1{color:#f4f4f5;font-size:24px}
-.card-box{background:linear-gradient(160deg,var(--card2),#09090b);border-radius:14px;padding:20px;border:1px solid var(--border);margin-bottom:25px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+.card-box{background:linear-gradient(160deg,var(--card2),var(--card));border-radius:14px;padding:20px;border:1px solid var(--border);margin-bottom:25px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
 .form-group{margin-bottom:15px}
 label{display:block;margin-bottom:6px;font-weight:600;font-size:14px}
-input[type=text],textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#000;color:#fff;font-size:14px;outline:none}
+input[type=text],textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#1b1f2a;color:#fff;font-size:14px;outline:none}
 input[type=text]:focus,textarea:focus{border-color:var(--accent)}
 textarea{height:180px;font-family:monospace;direction:ltr;text-align:left;resize:vertical}
 .upload{display:flex;align-items:center;gap:14px}
-.preview{width:90px;height:90px;border-radius:10px;border:1px dashed #3f3f46;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12px;text-align:center;flex:none}
+.preview{width:90px;height:90px;border-radius:10px;border:1px dashed #4a526a;background:#1b1f2a;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12px;text-align:center;flex:none}
 .preview img{width:100%;height:100%;object-fit:contain}
-.pick{background:#27272a;color:#fff;border:1px solid #3f3f46;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600}
+.pick{background:#3b4258;color:#fff;border:1px solid #4a526a;padding:10px 16px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600}
 .pick:hover{border-color:var(--accent)}
 #cardFile{display:none}
 button.main{background:var(--accent);color:#000;border:none;padding:12px 20px;border-radius:10px;font-weight:700;cursor:pointer;width:100%;font-size:16px;transition:.2s}
@@ -30,25 +30,25 @@ button.main:disabled{opacity:.5;cursor:wait}
 .items-title{margin-bottom:15px;font-size:18px;color:#d4d4d8}
 .item-card{display:flex;align-items:center;justify-content:space-between;background:var(--card);padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid var(--border)}
 .item-info{display:flex;align-items:center;gap:12px;min-width:0}
-.item-img{width:56px;height:56px;border-radius:8px;object-fit:contain;background:#000;border:1px solid var(--border);flex:none}
+.item-img{width:56px;height:56px;border-radius:8px;object-fit:contain;background:#1b1f2a;border:1px solid var(--border);flex:none}
 .item-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .delete-btn{background:var(--danger);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;flex:none}
 .delete-btn:hover{background:#b91c1c}
 .btns{display:flex;gap:8px;flex:none}
-.edit-btn{background:#27272a;color:#fff;border:1px solid #3f3f46;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+.edit-btn{background:#3b4258;color:#fff;border:1px solid #4a526a;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
 .edit-btn:hover{border-color:var(--accent)}
 .cancel-btn{display:none;margin-top:10px;background:transparent;color:var(--muted);border:1px solid var(--border);padding:10px;border-radius:10px;width:100%;cursor:pointer;font-size:14px}
 .item-card.editing{border-color:var(--accent)}
 
-#login{position:fixed;inset:0;z-index:20000;background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%);display:flex;align-items:center;justify-content:center;padding:20px}
-#login .box{width:100%;max-width:340px;background:linear-gradient(160deg,#18181b,#09090b);border:1px solid #27272a;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.7)}
+#login{position:fixed;inset:0;z-index:20000;background:radial-gradient(ellipse at top,#2c3347 0,#222839 45%,#1b1f2a 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+#login .box{width:100%;max-width:340px;background:linear-gradient(160deg,#2d3447,var(--card));border:1px solid #3b4258;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.7)}
 #login h2{text-align:center;margin-bottom:18px;font-size:20px;color:#f4f4f5}
-#login input{width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #27272a;background:#000;color:#fff;font-size:14px;outline:none;direction:ltr;text-align:left}
+#login input{width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #3b4258;background:#1b1f2a;color:#fff;font-size:14px;outline:none;direction:ltr;text-align:left}
 #login input:focus{border-color:#e4e4e7}
 #login button{width:100%;padding:12px;border:none;border-radius:10px;background:#e4e4e7;color:#000;font-weight:700;font-size:15px;cursor:pointer}
 #login button:disabled{opacity:.5}
 #login .err{color:#f87171;font-size:13px;min-height:18px;margin-bottom:8px;text-align:center}
-.logout{background:#27272a;color:#fff;border:1px solid #3f3f46;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;margin-top:10px}
+.logout{background:#3b4258;color:#fff;border:1px solid #4a526a;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;margin-top:10px}
 </style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -111,7 +111,7 @@ firebase.initializeApp({
 });
 const db=firebase.database().ref("cards");
 const $=id=>document.getElementById(id);
-const PH="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#18181b"/><text x="100" y="108" font-size="22" font-family="sans-serif" fill="#71717a" text-anchor="middle">Alfaham</text></svg>');
+const PH="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#2d3447"/><text x="100" y="108" font-size="22" font-family="sans-serif" fill="#8b93a8" text-anchor="middle">Alfaham</text></svg>');
 let imageData="",editingKey=null,allCards={};
 
 /* تصغير الصورة وتحويلها لنص يُحفظ في قاعدة البيانات (بدون الحاجة لـ Storage) */

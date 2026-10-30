@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alfaham</title>
-<style>html,body{height:100%;margin:0;background:#000;color:#a1a1aa;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
+<style>html,body{height:100%;margin:0;background:#1b1f2a;color:#a1a1aa;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -12,17 +12,23 @@
 <body>
 <p id="m">جارٍ التحميل...</p>
 <script>
-/* يفتح كود الكرت على رابط https حقيقي (نفس نطاق الموقع) بدل blob/srcdoc حتى يعمل تسجيل الدخول طبيعيًا */
+/* محمّل الكرت: يجلب الكود من قاعدة بيانات الواجهة ثم ينتقل إلى card.html (صفحة نظيفة بلا Firebase)
+   حتى يهيّئ كل كرت Firebase الخاص به ويتصل بقاعدة بياناته هو، لا بقاعدة الواجهة. */
 (function(){
   var id=new URLSearchParams(location.search).get("id");
-  function show(code){document.open();document.write(code);document.close()}
   function fail(t){document.getElementById("m").textContent=t}
   if(!id){fail("كرت غير معروف");return}
   var done=false;
   function cached(){
     try{var d=JSON.parse(localStorage.getItem("alfahamCardsV1")||"null");return d&&d[id]&&d[id].code?d[id].code:null}catch(e){return null}
   }
-  function finish(code){if(done)return;done=true;show(code)}
+  function finish(code){
+    if(done)return;done=true;
+    var ok=false;
+    try{sessionStorage.setItem("alfahamCode:"+id,code);ok=true}catch(e){}
+    if(!ok){try{window.name="alfahamCode:"+id+"\n"+code;ok=true}catch(e){}}
+    location.replace("card.html?id="+encodeURIComponent(id));
+  }
   firebase.initializeApp({
     apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",
     authDomain:"adminafm.firebaseapp.com",
