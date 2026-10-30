@@ -110,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       await Api.i.deleteCard(c.id);
       await _refresh(quiet: false);
+      if (mounted) _toast('تم حذف الكرت');
     } on ApiException catch (e) {
       if (mounted) _toast(e.message);
     }
@@ -273,7 +274,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         childAspectRatio: 0.86,
                       ),
                       delegate: SliverChildBuilderDelegate(
-                        (_, i) => _Tile(card: list[i], onTap: () => _open(list[i]), onLong: () => _sheet(list[i])),
+                        (_, i) => _Tile(
+                          card: list[i],
+                          onTap: () => _open(list[i]),
+                          onLong: () => _sheet(list[i]),
+                          onEdit: () => _edit(list[i]),
+                          onDelete: () => _delete(list[i]),
+                        ),
                         childCount: list.length,
                       ),
                     ),
@@ -291,7 +298,22 @@ class _Tile extends StatelessWidget {
   final CardItem card;
   final VoidCallback onTap;
   final VoidCallback onLong;
-  const _Tile({required this.card, required this.onTap, required this.onLong});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  const _Tile({required this.card, required this.onTap, required this.onLong, required this.onEdit, required this.onDelete});
+
+  Widget _action(IconData icon, String tip, Color color, VoidCallback f) => Tooltip(
+        message: tip,
+        child: Material(
+          color: const Color(0xB3000000),
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: f,
+            child: Padding(padding: const EdgeInsets.all(7), child: Icon(icon, size: 18, color: color)),
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +332,7 @@ class _Tile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           onLongPress: onLong,
+          onSecondaryTap: onLong, // زر الماوس الأيمن في الويب
           child: Stack(
             children: [
               Column(
@@ -330,6 +353,18 @@ class _Tile extends StatelessWidget {
                 ],
               ),
               if (card.pinned) const Positioned(top: 8, right: 8, child: Icon(Icons.star_rounded, color: C.star, size: 20)),
+              Positioned(
+                top: 6,
+                left: 6,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _action(Icons.edit_rounded, 'تعديل', C.accent, onEdit),
+                    const SizedBox(width: 6),
+                    _action(Icons.delete_rounded, 'حذف', C.danger, onDelete),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
