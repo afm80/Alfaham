@@ -1,1 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Alfaham</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--accent:#6366f1;--text:#f8fafc;--muted:#94a3b8;--border:#334155;--danger:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif}
+body{background:var(--bg);color:var(--text);padding:15px;min-height:100vh}
+.top{max-width:1200px;margin:0 auto 15px;display:flex;gap:10px;align-items:center}
+.top input{flex:1;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;outline:none}
+.top input:focus{border-color:var(--accent)}
+.icon-btn{background:var(--card);border:1px solid var(--border);color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-size:13px}
+.icon-btn:hover{border-color:var(--accent)}
+.chips{max-width:1200px;margin:0 auto 15px;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chip{flex:none;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;max-width:1200px;margin:0 auto}
+.card{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .2s,border-color .2s;position:relative}
+.card:hover{border-color:var(--accent)}.card:active{transform:scale(.97)}
+.card img{width:100%;height:120px;object-fit:cover;background:#000;display:block}
+.card .t{padding:10px;font-size:14px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pin{position:absolute;top:6px;right:6px;background:rgba(15,23,42,.8);border-radius:6px;padding:1px 6px;font-size:12px}
+.msg{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:50px}
+/* المتصفح الداخلي */
+.browser{display:none;position:fixed;inset:0;background:#fff;z-index:9999;flex-direction:column}
+.bar{background:var(--card);padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:8px;align-items:center}
+.bar .title{flex:1;font-size:14px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{background:#334155;color:#fff;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.bar .close{background:var(--danger)}
+.browser iframe{flex:1;width:100%;border:none;background:#fff;opacity:0;transition:opacity .25s}
+.browser iframe.ready{opacity:1}
+.browser{transform:translateY(12px);opacity:0;transition:opacity .22s,transform .22s}
+.browser.show{transform:none;opacity:1}
+.spin{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border:4px solid #cbd5e1;border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;pointer-events:none}
+.spin.off{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.card img{opacity:0;transition:opacity .3s}.card img.ok{opacity:1}
+.sk{height:164px;border-radius:12px;background:linear-gradient(90deg,var(--card) 25%,#273449 50%,var(--card) 75%);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.browser,.browser iframe,.card img{transition:none}.sk{animation:none}}
+/* الإعدادات */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal .box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:340px}
+.modal h3{margin-bottom:14px;font-size:16px}
+.opt{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.opt input{accent-color:var(--accent)}
+</style>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+<div class="top">
+  <input id="q" type="search" placeholder="ابحث في الأقسام...">
+  <button class="icon-btn" id="setBtn" aria-label="الإعدادات">⚙️</button>
+</div>
+<div class="chips" id="chips"></div>
+<div class="grid" id="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
 
+<div class="browser" id="browser">
+  <div class="bar">
+    <span class="title" id="bTitle"></span>
+    <button id="bReload">↻ تحديث</button>
+    <button id="bTab">فتح بتبويب</button>
+    <button id="bFull" aria-label="ملء الشاشة">⛶</button>
+    <button class="close" id="bClose">إغلاق ✕</button>
+  </div>
+  <div class="spin" id="spin"></div>
+  <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-downloads"></iframe>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <h3>طريقة فتح الكرت</h3>
+    <label class="opt"><input type="radio" name="mode" value="tab"> تبويب جديد في المتصفح</label>
+    <label class="opt"><input type="radio" name="mode" value="inapp"> داخل التطبيق (شاشة كاملة)</label>
+    <button class="icon-btn" style="width:100%;margin-top:6px" id="mClose">تم</button>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyDjHeOHBU-Ttrq5zsdigfPUg3b-NGzkQIU",
+  authDomain:"adminafm.firebaseapp.com",
+  databaseURL:"https://adminafm-default-rtdb.firebaseio.com/",
+  projectId:"adminafm",
+  storageBucket:"adminafm.firebasestorage.app",
+  messagingSenderId:"336808346535",
+  appId:"1:336808346535:web:f9fd7b95aad568f1c42c82"
+});
+const ref=firebase.database().ref("cards");
+const CK="alfahamCardsV1";
+const urlCache={};
+const $=id=>document.getElementById(id);
+const FALLBACK="https://via.placeholder.com/200x120/1e293b/818cf8?text=Alfaham";
+let cards=[],cat="الكل",term="",lastId=null;
+
+const getMode=()=>{try{return localStorage.getItem("openMode")||"tab"}catch(e){return"tab"}};
+const setMode=m=>{try{localStorage.setItem("openMode",m)}catch(e){}};
+
+function loadCache(){try{const d=JSON.parse(localStorage.getItem(CK)||"null");if(d)return build(d)}catch(e){}return false}
+function build(d){
+  cards=Object.keys(d).map(k=>({id:k,...d[k]}))
+    .sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.timestamp||0)-(a.timestamp||0));
+  render();return true;
+}
+loadCache(); // عرض فوري من آخر نسخة محفوظة
+ref.on("value",s=>{
+  const d=s.val()||{};
+  try{localStorage.setItem(CK,JSON.stringify(d))}catch(e){}
+  Object.values(urlCache).forEach(URL.revokeObjectURL);for(const k in urlCache)delete urlCache[k];
+  build(d);
+},err=>{if(!cards.length)$("grid").innerHTML='<p class="msg">تعذّر تحميل البيانات: '+err.message+'</p>'});
+
+function render(){
+  const cats=["الكل",...new Set(cards.map(c=>c.category).filter(Boolean))];
+  if(!cats.includes(cat))cat="الكل";
+  const chips=$("chips");chips.innerHTML="";
+  if(cats.length>1)cats.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="chip"+(c===cat?" on":"");b.textContent=c;
+    b.onclick=()=>{cat=c;render()};chips.appendChild(b);
+  });
+  const grid=$("grid");grid.innerHTML="";
+  const list=cards.filter(c=>(cat==="الكل"||c.category===cat)&&(c.title||"").toLowerCase().includes(term));
+  if(!list.length){grid.innerHTML='<p class="msg">'+(cards.length?"لا توجد نتائج.":"لا توجد أقسام مضافة بعد.")+'</p>';return}
+  list.forEach(c=>{
+    const el=document.createElement("div");el.className="card";
+    const img=document.createElement("img");img.src=c.image||FALLBACK;img.loading="lazy";img.alt="";
+    img.onload=()=>img.classList.add("ok");img.onerror=()=>{img.onerror=null;img.src=FALLBACK};
+    const t=document.createElement("div");t.className="t";t.textContent=c.title||"";
+    el.append(img,t);
+    if(c.pinned){const p=document.createElement("span");p.className="pin";p.textContent="⭐";el.appendChild(p)}
+    el.onclick=()=>openCard(c);el.addEventListener("pointerenter",()=>warm(c));el.addEventListener("touchstart",()=>warm(c),{passive:true});
+    grid.appendChild(el);
+  });
+}
+$("q").oninput=e=>{term=e.target.value.trim().toLowerCase();render()};
+
+function blobUrl(c){return urlCache[c.id]||(urlCache[c.id]=URL.createObjectURL(new Blob([c.code],{type:"text/html;charset=utf-8"})))}
+
+/* تجهيز مسبق: يبدأ عند لمس الكرت فيفتح فورًا عند الضغط */
+function warm(c){if(getMode()==="tab")blobUrl(c)}
+
+function openCard(c){
+  lastId=c.id;
+  if(getMode()==="tab"){
+    const w=window.open(blobUrl(c),"_blank");
+    if(!w)openInApp(c); // إذا حُظرت النافذة المنبثقة
+  }else openInApp(c);
+}
+
+let viewerOpen=false;
+function openInApp(c){
+  const br=$("browser"),fr=$("frame");
+  $("bTitle").textContent=c.title;
+  $("spin").classList.remove("off");fr.classList.remove("ready");
+  fr.onload=()=>{$("spin").classList.add("off");fr.classList.add("ready")};
+  fr.srcdoc=c.code;
+  br.style.display="flex";
+  requestAnimationFrame(()=>br.classList.add("show"));
+  document.body.style.overflow="hidden";
+  if(!viewerOpen){history.pushState({v:1},"");viewerOpen=true} // زر الرجوع يغلق الكرت
+}
+function closeViewer(fromPop){
+  if(!viewerOpen)return;
+  viewerOpen=false;
+  const br=$("browser");br.classList.remove("show");
+  setTimeout(()=>{br.style.display="none";$("frame").srcdoc="";$("frame").classList.remove("ready")},220);
+  document.body.style.overflow="";
+  if(!fromPop&&history.state&&history.state.v)history.back();
+}
+window.addEventListener("popstate",()=>closeViewer(true));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeViewer()});
+
+$("bReload").onclick=()=>{const c=cards.find(x=>x.id===lastId);if(!c)return;const fr=$("frame");$("spin").classList.remove("off");fr.classList.remove("ready");fr.srcdoc="";setTimeout(()=>fr.srcdoc=c.code,30)};
+$("bTab").onclick=()=>{const c=cards.find(x=>x.id===lastId);if(c)window.open(blobUrl(c),"_blank")};
+$("bFull").onclick=()=>{const b=$("browser");if(document.fullscreenElement)document.exitFullscreen();else if(b.requestFullscreen)b.requestFullscreen().catch(()=>{})};
+$("bClose").onclick=()=>closeViewer();
+
+$("setBtn").onclick=()=>{
+  document.querySelectorAll('input[name=mode]').forEach(r=>r.checked=r.value===getMode());
+  $("modal").style.display="flex";
+};
+document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>setMode(r.value));
+$("mClose").onclick=()=>$("modal").style.display="none";
+</script>
+</body>
+</html>
