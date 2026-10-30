@@ -49,14 +49,34 @@ body{background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%) 
 .modal h3{margin-bottom:14px;font-size:16px}
 .opt{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:14px}
 .opt input{accent-color:var(--accent)}
+
+#login{position:fixed;inset:0;z-index:20000;background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+#login .box{width:100%;max-width:340px;background:linear-gradient(160deg,#18181b,#09090b);border:1px solid #27272a;border-radius:16px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.7)}
+#login h2{text-align:center;margin-bottom:18px;font-size:20px;color:#f4f4f5}
+#login input{width:100%;padding:12px;margin-bottom:12px;border-radius:10px;border:1px solid #27272a;background:#000;color:#fff;font-size:14px;outline:none;direction:ltr;text-align:left}
+#login input:focus{border-color:#e4e4e7}
+#login button{width:100%;padding:12px;border:none;border-radius:10px;background:#e4e4e7;color:#000;font-weight:700;font-size:15px;cursor:pointer}
+#login button:disabled{opacity:.5}
+#login .err{color:#f87171;font-size:13px;min-height:18px;margin-bottom:8px;text-align:center}
 </style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
+<div id="login" style="display:none">
+  <div class="box">
+    <h2>تسجيل الدخول</h2>
+    <input id="lEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="username">
+    <input id="lPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+    <div class="err" id="lErr"></div>
+    <button id="lBtn">دخول</button>
+  </div>
+</div>
 <div class="top">
   <input id="q" type="search" placeholder="ابحث في الأقسام...">
   <button class="icon-btn" id="setBtn" aria-label="الإعدادات">⚙️</button>
+  <button class="icon-btn" id="outBtn">خروج</button>
 </div>
 <div class="chips" id="chips"></div>
 <div class="grid" id="grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
@@ -108,13 +128,40 @@ function build(d){
     .sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.timestamp||0)-(a.timestamp||0));
   render();return true;
 }
-loadCache(); // عرض فوري من آخر نسخة محفوظة
-ref.on("value",s=>{
-  const d=s.val()||{};
-  try{localStorage.setItem(CK,JSON.stringify(d))}catch(e){}
-  Object.values(urlCache).forEach(URL.revokeObjectURL);for(const k in urlCache)delete urlCache[k];
-  build(d);
-},err=>{if(!cards.length)$("grid").innerHTML='<p class="msg">تعذّر تحميل البيانات: '+err.message+'</p>'});
+let started=false;
+function start(){
+  if(started)return;started=true;
+  loadCache(); // عرض فوري من آخر نسخة محفوظة
+  ref.on("value",s=>{
+    const d=s.val()||{};
+    try{localStorage.setItem(CK,JSON.stringify(d))}catch(e){}
+    build(d);
+  },err=>{if(!cards.length)$("grid").innerHTML='<p class="msg">تعذّر تحميل البيانات: '+err.message+'</p>'});
+}
+function stop(){
+  started=false;ref.off();cards=[];
+  try{localStorage.removeItem(CK)}catch(e){}
+  $("grid").innerHTML="";$("chips").innerHTML="";
+}
+
+const auth=firebase.auth();
+function loginErr(e){
+  const m={"auth/wrong-password":"كلمة المرور غير صحيحة","auth/invalid-login-credentials":"البريد أو كلمة المرور غير صحيحة","auth/invalid-credential":"البريد أو كلمة المرور غير صحيحة","auth/user-not-found":"المستخدم غير موجود","auth/invalid-email":"صيغة البريد غير صحيحة","auth/too-many-requests":"محاولات كثيرة، انتظر قليلاً","auth/network-request-failed":"تحقق من الاتصال بالإنترنت"};
+  return m[e.code]||("خطأ: "+e.message);
+}
+function doLogin(){
+  const b=document.getElementById("lBtn"),er=document.getElementById("lErr");
+  er.textContent="";b.disabled=true;
+  auth.signInWithEmailAndPassword(document.getElementById("lEmail").value.trim(),document.getElementById("lPass").value)
+   .catch(e=>{er.textContent=loginErr(e)}).then(()=>{b.disabled=false});
+}
+document.getElementById("lBtn").onclick=doLogin;
+document.getElementById("lPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
+auth.onAuthStateChanged(u=>{
+  if(u){$("login").style.display="none";start()}
+  else{stop();$("login").style.display="flex"}
+});
+$("outBtn").onclick=()=>auth.signOut();
 
 function render(){
   const cats=["الكل",...new Set(cards.map(c=>c.category).filter(Boolean))];

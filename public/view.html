@@ -7,6 +7,7 @@
 <style>html,body{height:100%;margin:0;background:#000;color:#a1a1aa;font-family:sans-serif}body{display:flex;align-items:center;justify-content:center}</style>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body>
 <p id="m">جارٍ التحميل...</p>
@@ -31,16 +32,21 @@
     messagingSenderId:"336808346535",
     appId:"1:336808346535:web:f9fd7b95aad568f1c42c82"
   });
-  /* الأولوية للنسخة الحديثة من قاعدة البيانات، والنسخة المحفوظة احتياطاً إذا تأخر الاتصال */
-  var timer=setTimeout(function(){var c=cached();if(c)finish(c)},4000);
-  firebase.database().ref("cards/"+id).once("value").then(function(s){
-    clearTimeout(timer);
-    var c=s.val();
-    if(c&&c.code)finish(c.code);
-    else{var k=cached();if(k)finish(k);else fail("الكرت غير موجود")}
-  }).catch(function(e){
-    clearTimeout(timer);
-    var k=cached();if(k)finish(k);else fail("تعذّر التحميل: "+e.message)
+  /* لا يعمل إلا بعد تسجيل الدخول من الصفحة الرئيسية */
+  var un=firebase.auth().onAuthStateChanged(function(u){
+    un();
+    if(!u){fail("سجّل الدخول من الصفحة الرئيسية أولاً");return}
+    /* الأولوية للنسخة الحديثة من قاعدة البيانات، والنسخة المحفوظة احتياطاً إذا تأخر الاتصال */
+    var timer=setTimeout(function(){var c=cached();if(c)finish(c)},4000);
+    firebase.database().ref("cards/"+id).once("value").then(function(s){
+      clearTimeout(timer);
+      var c=s.val();
+      if(c&&c.code)finish(c.code);
+      else{var k=cached();if(k)finish(k);else fail("الكرت غير موجود")}
+    }).catch(function(e){
+      clearTimeout(timer);
+      var k=cached();if(k)finish(k);else fail("تعذّر التحميل: "+e.message)
+    });
   });
 })();
 </script>
