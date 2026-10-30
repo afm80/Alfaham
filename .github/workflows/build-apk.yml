@@ -3,23 +3,36 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - 'app/**'
 jobs:
   apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
     steps:
       - uses: actions/checkout@v4
+
+      # يلقى مجلد مشروع Flutter تلقائياً (الجذر أو أي مجلد فرعي مثل app/)
+      - name: Find Flutter project
+        id: proj
+        run: |
+          f=$(find . -name pubspec.yaml -not -path '*/.*' -not -path '*/node_modules/*' | head -1)
+          if [ -z "$f" ]; then echo "pubspec.yaml not found"; exit 1; fi
+          d=$(dirname "$f")
+          echo "dir=$d" >> "$GITHUB_OUTPUT"
+          echo "Flutter project: $d"
+
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
-      - run: bash setup.sh
-      - run: flutter build apk --release
+
+      - name: Setup (android/ios + icons)
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: bash setup.sh
+
+      - name: Build release APK
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: flutter build apk --release
+
       - uses: actions/upload-artifact@v4
         with:
           name: alfaham-admin-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ steps.proj.outputs.dir }}/build/app/outputs/flutter-apk/app-release.apk

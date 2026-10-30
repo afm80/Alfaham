@@ -12,7 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # يُنفَّذ فقط إذا كان firebase.json موجوداً، وإلا يُتخطى بدون فشل
+      - name: Check firebase.json
+        id: fb
+        run: |
+          if [ -f firebase.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "firebase.json not found - skipping deploy"; fi
       - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: steps.fb.outputs.ok == 'true'
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
