@@ -6,9 +6,9 @@
 <title>Alfaham</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f172a;--card:#1e293b;--accent:#6366f1;--text:#f8fafc;--muted:#94a3b8;--border:#334155;--danger:#ef4444}
+:root{--bg:#000;--card:#0f0f11;--card2:#18181b;--accent:#e4e4e7;--text:#fafafa;--muted:#a1a1aa;--border:#27272a;--danger:#dc2626}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Cairo',sans-serif}
-body{background:var(--bg);color:var(--text);padding:15px;min-height:100vh}
+body{background:radial-gradient(ellipse at top,#1a1a1d 0,#09090b 45%,#000 100%) fixed;color:var(--text);padding:15px;min-height:100vh}
 .top{max-width:1200px;margin:0 auto 15px;display:flex;gap:10px;align-items:center}
 .top input{flex:1;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;outline:none}
 .top input:focus{border-color:var(--accent)}
@@ -16,19 +16,20 @@ body{background:var(--bg);color:var(--text);padding:15px;min-height:100vh}
 .icon-btn:hover{border-color:var(--accent)}
 .chips{max-width:1200px;margin:0 auto 15px;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
 .chip{flex:none;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px}
-.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px;max-width:1200px;margin:0 auto}
-.card{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .2s,border-color .2s;position:relative}
-.card:hover{border-color:var(--accent)}.card:active{transform:scale(.97)}
-.card img{width:100%;height:120px;object-fit:cover;background:#000;display:block}
-.card .t{padding:10px;font-size:14px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pin{position:absolute;top:6px;right:6px;background:rgba(15,23,42,.8);border-radius:6px;padding:1px 6px;font-size:12px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.chip:hover{border-color:#52525b;color:#fff}.chip.on:hover{color:#000}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px;max-width:1200px;margin:0 auto}
+.card{background:linear-gradient(160deg,var(--card2),#09090b);border-radius:16px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .25s;position:relative;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+.card:hover{border-color:#52525b;transform:translateY(-4px);box-shadow:0 14px 30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.06)}.card:active{transform:scale(.97)}
+.card img{width:100%;height:130px;object-fit:cover;background:#000;display:block}
+.card .t{padding:11px 10px;font-size:14px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(0,0,0,.35);border-top:1px solid #1f1f23;color:#f4f4f5}
+.pin{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid #27272a;border-radius:8px;padding:1px 6px;font-size:12px;backdrop-filter:blur(4px)}
 .msg{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:50px}
 /* المتصفح الداخلي */
 .browser{display:none;position:fixed;inset:0;background:#fff;z-index:9999;flex-direction:column}
 .bar{background:var(--card);padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:8px;align-items:center}
-.bar .title{flex:1;font-size:14px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar button{background:#334155;color:#fff;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.bar .title{flex:1;font-size:14px;font-weight:700;color:#e4e4e7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar button{background:#27272a;color:#fff;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
 .bar .close{background:var(--danger)}
 .browser iframe{flex:1;width:100%;border:none;background:#fff;opacity:0;transition:opacity .25s}
 .browser iframe.ready{opacity:1}
@@ -37,12 +38,12 @@ body{background:var(--bg);color:var(--text);padding:15px;min-height:100vh}
 .spin{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border:4px solid #cbd5e1;border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;pointer-events:none}
 .spin.off{display:none}
 @keyframes sp{to{transform:rotate(360deg)}}
-.card img{opacity:0;transition:opacity .3s}.card img.ok{opacity:1}
-.sk{height:164px;border-radius:12px;background:linear-gradient(90deg,var(--card) 25%,#273449 50%,var(--card) 75%);background-size:200% 100%;animation:sh 1.2s infinite}
+.card img{opacity:0;transition:opacity .3s,transform .4s}.card img.ok{opacity:1}.card:hover img{transform:scale(1.06)}
+.sk{height:176px;border-radius:16px;background:linear-gradient(90deg,var(--card) 25%,#1f1f23 50%,var(--card) 75%);background-size:200% 100%;animation:sh 1.2s infinite}
 @keyframes sh{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.browser,.browser iframe,.card img{transition:none}.sk{animation:none}}
 /* الإعدادات */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;align-items:center;justify-content:center;padding:20px}
 .modal .box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:340px}
 .modal h3{margin-bottom:14px;font-size:16px}
 .opt{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:14px}
@@ -94,7 +95,7 @@ const ref=firebase.database().ref("cards");
 const CK="alfahamCardsV1";
 const urlCache={};
 const $=id=>document.getElementById(id);
-const FALLBACK="https://via.placeholder.com/200x120/1e293b/818cf8?text=Alfaham";
+const FALLBACK="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="130"><rect width="200" height="130" fill="#18181b"/><text x="100" y="72" font-size="20" font-family="sans-serif" fill="#71717a" text-anchor="middle">Alfaham</text></svg>');
 let cards=[],cat="الكل",term="",lastId=null;
 
 const getMode=()=>{try{return localStorage.getItem("openMode")||"tab"}catch(e){return"tab"}};
