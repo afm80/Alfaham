@@ -1,4 +1,9 @@
-.firebase/
-node_modules/
-*-firebase-adminsdk-*.json
-serviceAccount*.json
+build/
+.dart_tool/
+.flutter-plugins*
+.packages
+pubspec.lock
+*.iml
+.idea/
+android/.gradle/
+android/local.properties
