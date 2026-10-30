@@ -271,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         maxCrossAxisExtent: 190,
                         mainAxisSpacing: 14,
                         crossAxisSpacing: 14,
-                        childAspectRatio: 0.86,
+                        childAspectRatio: 0.72,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (_, i) => _Tile(
@@ -302,15 +302,31 @@ class _Tile extends StatelessWidget {
   final VoidCallback onDelete;
   const _Tile({required this.card, required this.onTap, required this.onLong, required this.onEdit, required this.onDelete});
 
-  Widget _action(IconData icon, String tip, Color color, VoidCallback f) => Tooltip(
-        message: tip,
-        child: Material(
-          color: const Color(0xB3000000),
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: f,
-            child: Padding(padding: const EdgeInsets.all(7), child: Icon(icon, size: 18, color: color)),
+  Widget _action(IconData icon, String label, Color color, VoidCallback f) => Expanded(
+        child: Tooltip(
+          message: label,
+          child: Material(
+            color: color.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(10),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: f,
+              child: Container(
+                height: 32,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withOpacity(0.55)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 16, color: color),
+                    const SizedBox(width: 4),
+                    Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       );
@@ -347,24 +363,22 @@ class _Tile extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
                     child: Text(card.title, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                    child: Row(
+                      children: [
+                        _action(Icons.edit_rounded, 'تعديل', const Color(0xFF34D399), onEdit),
+                        const SizedBox(width: 8),
+                        _action(Icons.delete_rounded, 'حذف', const Color(0xFFFB7185), onDelete),
+                      ],
+                    ),
                   ),
                 ],
               ),
               if (card.pinned) const Positioned(top: 8, right: 8, child: Icon(Icons.star_rounded, color: C.star, size: 20)),
-              Positioned(
-                top: 6,
-                left: 6,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _action(Icons.edit_rounded, 'تعديل', C.accent, onEdit),
-                    const SizedBox(width: 6),
-                    _action(Icons.delete_rounded, 'حذف', C.danger, onDelete),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
