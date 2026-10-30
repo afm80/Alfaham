@@ -1,24 +1,20 @@
-name: Deploy to Firebase Hosting
+name: Deploy Web to Firebase Hosting
 on:
   push:
     branches: [main]
-    paths:
-      - 'public/**'
-      - 'firebase.json'
-      - '.firebaserc'
   workflow_dispatch:
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # يُنفَّذ فقط إذا كان firebase.json موجوداً، وإلا يُتخطى بدون فشل
-      - name: Check firebase.json
-        id: fb
-        run: |
-          if [ -f firebase.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "firebase.json not found - skipping deploy"; fi
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Setup
+        run: bash setup.sh
+      - name: Build web
+        run: flutter build web --release
       - uses: FirebaseExtended/action-hosting-deploy@v0
-        if: steps.fb.outputs.ok == 'true'
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
