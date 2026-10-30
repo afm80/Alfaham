@@ -4,6 +4,7 @@ import 'api.dart';
 import 'edit_screen.dart';
 import 'login_screen.dart';
 import 'models.dart';
+import 'reorder_screen.dart';
 import 'ui.dart';
 import 'viewer_screen.dart';
 
@@ -94,6 +95,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       MaterialPageRoute(builder: (_) => EditScreen(card: c, categories: cats)),
     );
     if (ok == true) _refresh(quiet: false);
+  }
+
+  Future<void> _reorder() async {
+    if (_all.length < 2) {
+      _toast('يلزم كرتان على الأقل للترتيب');
+      return;
+    }
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ReorderScreen(cards: List.of(_all))),
+    );
+    if (ok == true) {
+      await _refresh(quiet: false);
+      if (mounted) _toast('تم حفظ الترتيب');
+    }
   }
 
   Future<void> _togglePin(CardItem c) async {
@@ -217,6 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             ],
                           ),
                         ),
+                        IconButton(tooltip: 'ترتيب الكروت', onPressed: _reorder, icon: const Icon(Icons.swap_vert_rounded)),
                         IconButton(tooltip: 'تحديث', onPressed: () => _refresh(quiet: false), icon: const Icon(Icons.refresh_rounded)),
                         IconButton(tooltip: 'خروج', onPressed: _logout, icon: const Icon(Icons.logout_rounded)),
                       ],

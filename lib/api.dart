@@ -160,7 +160,12 @@ class Api {
     }
     list.sort((a, b) {
       final p = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
-      return p != 0 ? p : b.timestamp.compareTo(a.timestamp);
+      if (p != 0) return p;
+      final ao = a.order, bo = b.order;
+      if (ao == null && bo == null) return b.timestamp.compareTo(a.timestamp);
+      if (ao == null) return -1; // الكروت الجديدة (بلا ترتيب) تظهر أولاً
+      if (bo == null) return 1;
+      return ao != bo ? ao.compareTo(bo) : b.timestamp.compareTo(a.timestamp);
     });
     return list;
   }
@@ -173,6 +178,13 @@ class Api {
   Future<void> updateCard(String id, Map<String, dynamic> data) async {
     final t = await _token();
     await _send(() => http.patch(_u('cards/$id', t), body: jsonEncode(data)));
+  }
+
+  /// يحفظ الترتيب اليدوي: يكتب الحقل order لكل كرت بطلب واحد (تحديث متعدد المسارات).
+  Future<void> saveOrder(List<String> ids) async {
+    final t = await _token();
+    final body = {for (var i = 0; i < ids.length; i++) '${ids[i]}/order': i};
+    await _send(() => http.patch(_u('cards', t), body: jsonEncode(body)));
   }
 
   Future<void> deleteCard(String id) async {

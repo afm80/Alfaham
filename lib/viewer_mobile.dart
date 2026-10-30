@@ -25,6 +25,7 @@ class ViewerScreen extends StatefulWidget {
 
 class _ViewerScreenState extends State<ViewerScreen> {
   InAppWebViewController? _c;
+  late final String _code = CodeFix.forView(widget.card.code);
   double _progress = 0;
   bool _full = false;
   final List<String> _errs = [];
@@ -37,6 +38,12 @@ window.addEventListener('error', function(e){
     var t = e.target;
     if (t && t !== window && t.tagName) {
       // خطأ تحميل مورد (صورة/سكربت/ستايل) وليس خطأ جافاسكربت
+      if (t.tagName === 'IMG' && !t.__afmRetry && /^https?:/.test(t.src || '')) {
+        // بعض المواقع (مثل top4top) تمنع الصور عند وجود Referer غريب؛ نعيد المحاولة مرة واحدة بدونه
+        t.__afmRetry = 1;
+        try { t.referrerPolicy = 'no-referrer'; var s0 = t.src; t.removeAttribute('src'); t.src = s0; } catch(_){}
+        return;
+      }
       var u = String(t.currentSrc || t.src || t.href || '');
       if (u.indexOf('data:') === 0) u = 'data:...';
       window.flutter_inappwebview.callHandler('pageError', '[تعذر تحميل ' + String(t.tagName).toLowerCase() + '] ' + u.slice(0, 200), 0, 0, '');
@@ -57,7 +64,7 @@ window.addEventListener('unhandledrejection', function(e){
     final msg = a[0].toString();
     final line = int.tryParse(a[1].toString()) ?? 0;
     final col = int.tryParse(a[2].toString()) ?? 0;
-    final lines = widget.card.code.split('\n');
+    final lines = _code.split('\n');
     var s = msg;
     if (line > 0 && line <= lines.length) {
       final l = lines[line - 1];
@@ -79,7 +86,7 @@ window.addEventListener('unhandledrejection', function(e){
   Future<void> _load() async {
     setState(() => _errs.clear());
     await _c?.loadData(
-      data: widget.card.code,
+      data: _code,
       baseUrl: WebUri.uri(_base),
       historyUrl: WebUri.uri(_base),
       mimeType: 'text/html',
@@ -176,7 +183,7 @@ window.addEventListener('unhandledrejection', function(e){
               children: [
                 InAppWebView(
                   initialData: InAppWebViewInitialData(
-                    data: widget.card.code,
+                    data: _code,
                     baseUrl: WebUri.uri(_base),
                     historyUrl: WebUri.uri(_base),
                     mimeType: 'text/html',
@@ -218,7 +225,7 @@ window.addEventListener('unhandledrejection', function(e){
                       return WebResourceResponse(
                         contentType: 'text/html',
                         contentEncoding: 'utf-8',
-                        data: Uint8List.fromList(utf8.encode(widget.card.code)),
+                        data: Uint8List.fromList(utf8.encode(_code)),
                       );
                     }
                     return null;

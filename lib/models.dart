@@ -12,6 +12,20 @@ class CodeFix {
   static final _gt = RegExp(r"('>'\s*:\s*)'>'");
   static final _quot = RegExp("('\"'\\s*:\\s*)'\"'");
 
+  /// شعار بديل (data URI) يُحمَّل عند بدء التطبيق من assets/icon/mark.png.
+  static String? logoUri;
+
+  // الكروت القديمة تشير إلى ./assets/site-logo.png وهو ملف كان على الموقع السابق ولم يعد موجوداً،
+  // فنستبدله وقت العرض فقط (لا نعدّل ما في القاعدة) بشعار التطبيق.
+  static final _logo = RegExp(r'(?<![\w./-])(?:\.{0,2}/)*assets/site-logo\.png');
+
+  /// يُستعمل عند العرض فقط (WebView / iframe).
+  static String forView(String code) {
+    final u = logoUri;
+    if (u == null || !code.contains('site-logo.png')) return code;
+    return code.replaceAll(_logo, u);
+  }
+
   static bool isBroken(String code) => _apos.hasMatch(code);
 
   static String repair(String code) {
@@ -37,6 +51,9 @@ class CardItem {
   /// true إذا أُصلح كود الكرت تلقائياً عند التحميل (انظر CodeFix).
   final bool repaired;
 
+  /// ترتيب الكرت اليدوي (null = لم يُرتَّب بعد، فيظهر في الأعلى حسب الأحدث).
+  final int? order;
+
   CardItem({
     required this.id,
     required this.title,
@@ -46,6 +63,7 @@ class CardItem {
     this.pinned = false,
     this.timestamp = 0,
     this.repaired = false,
+    this.order,
   });
 
   factory CardItem.fromMap(String id, Map m) {
@@ -60,6 +78,7 @@ class CardItem {
       pinned: m['pinned'] == true,
       timestamp: m['timestamp'] is num ? (m['timestamp'] as num).toInt() : 0,
       repaired: fixed != raw,
+      order: m['order'] is num ? (m['order'] as num).toInt() : null,
     );
   }
 
