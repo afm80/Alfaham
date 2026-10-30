@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -23,6 +25,38 @@ class _ViewerScreenState extends State<ViewerScreen> {
   double _progress = 0;
   bool _full = false;
   final List<String> _errs = [];
+
+  static const _hook = r'''
+window.addEventListener('error', function(e){
+  try{ window.flutter_inappwebview.callHandler('pageError', String(e.message), e.lineno||0, e.colno||0, String(e.filename||'')); }catch(_){}
+}, true);
+window.addEventListener('unhandledrejection', function(e){
+  try{ var r=e.reason; window.flutter_inappwebview.callHandler('pageError', 'Promise: '+String(r&&r.message?r.message:r), 0, 0, ''); }catch(_){}
+});
+''';
+
+  /// يعرض موضع الخطأ داخل كود الكرت (السطر والعمود والحرف المشبوه).
+  void _onPageError(List a) {
+    if (a.length < 3) return;
+    final msg = a[0].toString();
+    final line = int.tryParse(a[1].toString()) ?? 0;
+    final col = int.tryParse(a[2].toString()) ?? 0;
+    final lines = widget.card.code.split('\n');
+    var s = msg;
+    if (line > 0 && line <= lines.length) {
+      final l = lines[line - 1];
+      if (l.isNotEmpty) {
+        final i = (col - 1).clamp(0, l.length - 1).toInt();
+        final from = (i - 40).clamp(0, l.length).toInt();
+        final to = (i + 40).clamp(0, l.length).toInt();
+        final hex = l.codeUnitAt(i).toRadixString(16).toUpperCase().padLeft(4, '0');
+        s = '$msg\nسطر $line عمود $col | الحرف U+$hex\n…${l.substring(from, to)}…';
+      } else {
+        s = '$msg\nسطر $line عمود $col (سطر فارغ)';
+      }
+    }
+    if (mounted && !_errs.contains(s)) setState(() => _errs.add(s));
+  }
 
   Uri get _base => Uri.parse('${AppConfig.webOrigin}/run/${Uri.encodeComponent(widget.card.id)}.html');
 
@@ -135,7 +169,19 @@ class _ViewerScreenState extends State<ViewerScreen> {
                     thirdPartyCookiesEnabled: true,
                     mixedContentMode: MixedContentMode.MIXED_CONTENT_COMPATIBILITY_MODE,
                   ),
-                  onWebViewCreated: (c) => _c = c,
+                  onWebViewCreated: (c) {
+                    _c = c;
+                    c.addJavaScriptHandler(
+                      handlerName: 'pageError',
+                      callback: (a) {
+                        _onPageError(a);
+                        return null;
+                      },
+                    );
+                  },
+                  initialUserScripts: UnmodifiableListView<UserScript>([
+                    UserScript(source: _hook, injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START),
+                  ]),
                   onProgressChanged: (_, p) => setState(() => _progress = p / 100),
                   onConsoleMessage: (_, m) {
                     if (m.messageLevel == ConsoleMessageLevel.ERROR && !_errs.contains(m.message)) {
