@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _q = '';
   bool _loading = true;
   String? _err;
+  bool _moving = false;
 
   @override
   void initState() {
@@ -109,6 +110,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (ok == true) {
       await _refresh(quiet: false);
       if (mounted) _toast('تم حفظ الترتيب');
+    }
+  }
+
+  /// نقل الكرت خطوة واحدة (dir = -1 للتقديم، +1 للتأخير) ضمن القائمة المعروضة، ثم حفظ الترتيب.
+  Future<void> _move(CardItem c, int dir, List<CardItem> visible) async {
+    if (_moving) return;
+    final i = visible.indexWhere((x) => x.id == c.id);
+    final j = i + dir;
+    if (i < 0 || j < 0 || j >= visible.length) return;
+    final n = visible[j];
+    if (n.pinned != c.pinned) {
+      _toast('الكروت المثبّتة ⭐ تبقى دائماً في الأعلى');
+      return;
+    }
+    final a = _all.indexWhere((x) => x.id == c.id);
+    final b = _all.indexWhere((x) => x.id == n.id);
+    if (a < 0 || b < 0) return;
+    final backup = List<CardItem>.of(_all);
+    setState(() {
+      _moving = true;
+      final t = _all[a];
+      _all[a] = _all[b];
+      _all[b] = t;
+    });
+    try {
+      await Api.i.saveOrder([for (final x in _all) x.id]);
+      await _refresh();
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _all = backup);
+        _toast(e.message);
+      }
+    } finally {
+      if (mounted) setState(() => _moving = false);
     }
   }
 
@@ -288,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         maxCrossAxisExtent: 190,
                         mainAxisSpacing: 14,
                         crossAxisSpacing: 14,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.64,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (_, i) => _Tile(
@@ -297,6 +332,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           onLong: () => _sheet(list[i]),
                           onEdit: () => _edit(list[i]),
                           onDelete: () => _delete(list[i]),
+                          onPrev: i > 0 && !_moving ? () => _move(list[i], -1, list) : null,
+                          onNext: i < list.length - 1 && !_moving ? () => _move(list[i], 1, list) : null,
                         ),
                         childCount: list.length,
                       ),
@@ -317,7 +354,41 @@ class _Tile extends StatelessWidget {
   final VoidCallback onLong;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  const _Tile({required this.card, required this.onTap, required this.onLong, required this.onEdit, required this.onDelete});
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  const _Tile({
+    required this.card,
+    required this.onTap,
+    required this.onLong,
+    required this.onEdit,
+    required this.onDelete,
+    this.onPrev,
+    this.onNext,
+  });
+
+  /// زر سهم (الاتجاه ثابت LTR حتى لا ينعكس السهم في الواجهة العربية).
+  Widget _arrow(IconData icon, String tip, VoidCallback? f) => Expanded(
+        child: Tooltip(
+          message: tip,
+          child: Material(
+            color: Color(f == null ? 0x08FFFFFF : 0x1AFFFFFF),
+            borderRadius: BorderRadius.circular(10),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: f,
+              child: SizedBox(
+                height: 30,
+                child: Center(
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Icon(icon, size: 20, color: f == null ? const Color(0x449DB3BD) : C.accent),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 
   Widget _action(IconData icon, String label, Color color, VoidCallback f) => Expanded(
         child: Tooltip(
@@ -384,12 +455,23 @@ class _Tile extends StatelessWidget {
                     child: Text(card.title, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
                     child: Row(
                       children: [
                         _action(Icons.edit_rounded, 'تعديل', const Color(0xFF34D399), onEdit),
                         const SizedBox(width: 8),
                         _action(Icons.delete_rounded, 'حذف', const Color(0xFFFB7185), onDelete),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                    child: Row(
+                      children: [
+                        // في الواجهة العربية بداية القائمة على اليمين: السهم → يقدّم الكرت، والسهم ← يؤخّره
+                        _arrow(Icons.arrow_forward_rounded, 'تقديم الكرت', onPrev),
+                        const SizedBox(width: 8),
+                        _arrow(Icons.arrow_back_rounded, 'تأخير الكرت', onNext),
                       ],
                     ),
                   ),

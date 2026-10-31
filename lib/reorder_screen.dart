@@ -34,6 +34,17 @@ class _ReorderScreenState extends State<ReorderScreen> {
     }
   }
 
+  void _moveBy(int i, int d) {
+    final j = i + d;
+    if (j < 0 || j >= _list.length) return;
+    setState(() {
+      final t = _list[i];
+      _list[i] = _list[j];
+      _list[j] = t;
+      _changed = true;
+    });
+  }
+
   Future<bool> _confirmExit() async {
     if (!_changed || _saving) return true;
     return confirmDialog(context, 'تجاهل التغييرات', 'لم تحفظ الترتيب الجديد، هل تريد الخروج؟', ok: 'خروج');
@@ -75,7 +86,7 @@ class _ReorderScreenState extends State<ReorderScreen> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'اسحب المقبض لتغيير مكان الكرت ثم اضغط «حفظ». الكروت المثبّتة ⭐ تبقى دائماً في الأعلى.',
+                        'استخدم الأسهم ↑ ↓ أو اسحب المقبض لتغيير مكان الكرت ثم اضغط «حفظ». الكروت المثبّتة ⭐ تبقى دائماً في الأعلى.',
                         style: TextStyle(color: C.muted, fontSize: 12.5, height: 1.5),
                       ),
                     ),
@@ -122,12 +133,31 @@ class _ReorderScreenState extends State<ReorderScreen> {
                           ],
                         ),
                         subtitle: c.category.isEmpty ? null : Text(c.category, style: const TextStyle(color: C.muted, fontSize: 12)),
-                        trailing: ReorderableDragStartListener(
-                          index: i,
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Icon(Icons.drag_handle_rounded, color: C.accent),
-                          ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'للأعلى',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: i > 0 ? () => _moveBy(i, -1) : null,
+                              icon: const Icon(Icons.arrow_upward_rounded),
+                              color: C.accent,
+                            ),
+                            IconButton(
+                              tooltip: 'للأسفل',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: i < _list.length - 1 ? () => _moveBy(i, 1) : null,
+                              icon: const Icon(Icons.arrow_downward_rounded),
+                              color: C.accent,
+                            ),
+                            ReorderableDragStartListener(
+                              index: i,
+                              child: const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Icon(Icons.drag_handle_rounded, color: C.muted),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
