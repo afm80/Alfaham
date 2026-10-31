@@ -33,29 +33,44 @@ class _ViewerScreenState extends State<ViewerScreen> {
   Timer? _watch;
 
   static const _hook = r'''
-window.addEventListener('error', function(e){
-  try{
-    var t = e.target;
-    if (t && t !== window && t.tagName) {
-      // خطأ تحميل مورد (صورة/سكربت/ستايل) وليس خطأ جافاسكربت
-      if (t.tagName === 'IMG' && !t.__afmRetry && /^https?:/.test(t.src || '')) {
-        // بعض المواقع (مثل top4top) تمنع الصور عند وجود Referer غريب؛ نعيد المحاولة مرة واحدة بدونه
-        t.__afmRetry = 1;
-        try { t.referrerPolicy = 'no-referrer'; var s0 = t.src; t.removeAttribute('src'); t.src = s0; } catch(_){}
+(function(){
+  var seen = {}, total = 0;
+  function report(msg, line, col, file){
+    var k = msg + '|' + line + '|' + col;
+    if (seen[k] || total >= 40) return;   // لا نكرر نفس الخطأ ولا نغرق التطبيق
+    seen[k] = 1; total++;
+    try{ window.flutter_inappwebview.callHandler('pageError', String(msg), line||0, col||0, String(file||'')); }catch(_){}
+  }
+  window.addEventListener('error', function(e){
+    try{
+      var t = e.target;
+      if (t && t !== window && t.tagName) {
+        t.__afmN = (t.__afmN || 0) + 1;
+        if (t.__afmN > 4) {
+          // حلقة onerror لا نهائية (صورة بديلة فاشلة تعيد تشغيل نفسها): نوقفها حتى لا تتجمد الشاشة
+          try { t.onerror = null; t.removeAttribute('onerror'); } catch(_){}
+          e.stopImmediatePropagation();
+          return;
+        }
+        if (t.tagName === 'IMG' && !t.__afmRetry && /^https?:/.test(t.src || '')) {
+          // بعض المواقع (مثل top4top) تمنع الصور عند وجود Referer غريب؛ نعيد المحاولة مرة واحدة بدونه
+          t.__afmRetry = 1;
+          try { t.referrerPolicy = 'no-referrer'; var s0 = t.src; t.removeAttribute('src'); t.src = s0; } catch(_){}
+          return;
+        }
+        var u = String(t.currentSrc || t.src || t.href || '');
+        if (u.indexOf('data:') === 0) u = 'data:...';
+        report('[تعذر تحميل ' + String(t.tagName).toLowerCase() + '] ' + u.slice(0, 200), 0, 0, '');
         return;
       }
-      var u = String(t.currentSrc || t.src || t.href || '');
-      if (u.indexOf('data:') === 0) u = 'data:...';
-      window.flutter_inappwebview.callHandler('pageError', '[تعذر تحميل ' + String(t.tagName).toLowerCase() + '] ' + u.slice(0, 200), 0, 0, '');
-      return;
-    }
-    var m = e.message || (e.error && e.error.message) || 'خطأ غير معروف';
-    window.flutter_inappwebview.callHandler('pageError', String(m), e.lineno||0, e.colno||0, String(e.filename||''));
-  }catch(_){}
-}, true);
-window.addEventListener('unhandledrejection', function(e){
-  try{ var r=e.reason; window.flutter_inappwebview.callHandler('pageError', 'Promise: '+String(r&&r.message?r.message:r), 0, 0, ''); }catch(_){}
-});
+      var m = e.message || (e.error && e.error.message) || 'خطأ غير معروف';
+      report(m, e.lineno||0, e.colno||0, e.filename||'');
+    }catch(_){}
+  }, true);
+  window.addEventListener('unhandledrejection', function(e){
+    try{ var r=e.reason; report('Promise: '+String(r&&r.message?r.message:r), 0, 0, ''); }catch(_){}
+  });
+})();
 ''';
 
   /// يعرض موضع الخطأ داخل كود الكرت (السطر والعمود والحرف المشبوه).
@@ -64,7 +79,8 @@ window.addEventListener('unhandledrejection', function(e){
     final msg = a[0].toString();
     final line = int.tryParse(a[1].toString()) ?? 0;
     final col = int.tryParse(a[2].toString()) ?? 0;
-    final lines = _code.split('\n');
+    if (_errs.contains(msg)) return;
+    final lines = line > 0 ? _code.split('\n') : const <String>[];
     var s = msg;
     if (line > 0 && line <= lines.length) {
       final l = lines[line - 1];

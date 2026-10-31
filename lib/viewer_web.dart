@@ -25,7 +25,7 @@ class _ViewerScreenState extends State<ViewerScreen> {
   JSFunction? _listener;
 
   // سكربت يُحقن داخل الكرت (سطر واحد حتى لا تتغير أرقام الأسطر) ويرسل الأخطاء للتطبيق.
-  static const _hook = r'''<script>(function(){function s(m,l,c){try{parent.postMessage({__afm:1,msg:m,line:l||0,col:c||0},'*')}catch(_){}}addEventListener('error',function(e){var t=e.target;if(t&&t!==window&&t.tagName){if(t.tagName==='IMG'&&!t.__afmRetry&&/^https?:/.test(t.src||'')){t.__afmRetry=1;try{t.referrerPolicy='no-referrer';var s0=t.src;t.removeAttribute('src');t.src=s0}catch(_){}return}var u=String(t.currentSrc||t.src||t.href||'');if(u.indexOf('data:')===0)u='data:...';s('[تعذر تحميل '+String(t.tagName).toLowerCase()+'] '+u.slice(0,200));return}s(String(e.message||(e.error&&e.error.message)||'خطأ غير معروف'),e.lineno,e.colno)},true);addEventListener('unhandledrejection',function(e){var r=e.reason;s('Promise: '+String(r&&r.message?r.message:r))});var ce=console.error;console.error=function(){try{s('console.error: '+Array.prototype.slice.call(arguments).map(String).join(' ').slice(0,300))}catch(_){}ce.apply(console,arguments)}})();</script>''';
+  static const _hook = r'''<script>(function(){var seen={},total=0;function s(m,l,c){var k=m+'|'+l+'|'+c;if(seen[k]||total>=40)return;seen[k]=1;total++;try{parent.postMessage({__afm:1,msg:m,line:l||0,col:c||0},'*')}catch(_){}}addEventListener('error',function(e){var t=e.target;if(t&&t!==window&&t.tagName){t.__afmN=(t.__afmN||0)+1;if(t.__afmN>4){try{t.onerror=null;t.removeAttribute('onerror')}catch(_){}e.stopImmediatePropagation();return}if(t.tagName==='IMG'&&!t.__afmRetry&&/^https?:/.test(t.src||'')){t.__afmRetry=1;try{t.referrerPolicy='no-referrer';var s0=t.src;t.removeAttribute('src');t.src=s0}catch(_){}return}var u=String(t.currentSrc||t.src||t.href||'');if(u.indexOf('data:')===0)u='data:...';s('[تعذر تحميل '+String(t.tagName).toLowerCase()+'] '+u.slice(0,200));return}s(String(e.message||(e.error&&e.error.message)||'خطأ غير معروف'),e.lineno,e.colno)},true);addEventListener('unhandledrejection',function(e){var r=e.reason;s('Promise: '+String(r&&r.message?r.message:r))});var ce=console.error;console.error=function(){try{s('console.error: '+Array.prototype.slice.call(arguments).map(String).join(' ').slice(0,300))}catch(_){}ce.apply(console,arguments)}})();</script>''';
 
   /// يحقن السكربت بعد <head> (أو <html> أو <!doctype>) كي لا يتغير وضع العرض (quirks mode).
   String _withHook(String code) {
@@ -53,7 +53,8 @@ class _ViewerScreenState extends State<ViewerScreen> {
     final msg = d['msg'].toString();
     final line = (d['line'] is num) ? (d['line'] as num).toInt() : 0;
     final col = (d['col'] is num) ? (d['col'] as num).toInt() : 0;
-    final lines = _code.split('\n');
+    if (_errs.contains(msg)) return;
+    final lines = line > 0 ? _code.split('\n') : const <String>[];
     var s = msg;
     if (line > 0 && line <= lines.length) {
       final l = lines[line - 1];
