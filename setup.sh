@@ -32,5 +32,19 @@ CACHE="${PUB_CACHE:-$HOME/.pub-cache}"
 for f in "$CACHE"/hosted/pub.dev/*/android/build.gradle "$CACHE"/hosted/pub.dev/*/android/build.gradle.kts; do
   [ -f "$f" ] && grep -q "proguard-android.txt" "$f" && sed -i "s/proguard-android\.txt/proguard-android-optimize.txt/g" "$f" && echo "patched: $f"
 done
+# إصلاح: انهيار lint (lintVitalAnalyzeRelease) داخل image_picker_android
+# (NoSuchMethodError: List.removeLast) بسبب عدم توافق lint مع JDK 17 — نعطّل مهام lintVital لكل المشاريع
+mkdir -p "$HOME/.gradle/init.d"
+cat > "$HOME/.gradle/init.d/disable-lint-vital.gradle" <<'GEOF'
+allprojects {
+    tasks.configureEach { t ->
+        if (t.name.startsWith("lintVital") || t.name == "lintAnalyzeRelease") {
+            t.enabled = false
+        }
+    }
+}
+GEOF
+echo "disabled lintVital tasks via init script"
+
 dart run flutter_launcher_icons
 echo "تم. شغّل: flutter run | flutter build apk --release | flutter build web --release"
